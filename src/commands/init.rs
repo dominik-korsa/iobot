@@ -1,3 +1,4 @@
+use console::style;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input, Select};
 use maplit::btreemap;
@@ -156,5 +157,11 @@ pub fn init() {
     if let Some(verifier_value) = verifier_value {
         result.insert("verifier", to_value(&verifier_value).unwrap());
     }
-    fs::write("iobot.yaml", serde_yaml::to_string(&result).unwrap()).expect("Unable to write file");
+    let yaml = serde_yaml::to_string(&result).unwrap();
+    fs::write("iobot.yaml", &yaml).expect("Unable to write file");
+    println!(
+        "{}",
+        style(format!("Saved to file {}", style("iobot.yaml").bold())).green()
+    );
+    println!("{}", yaml);
 }
