@@ -1,0 +1,171 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input"],
+  "$defs": {
+    "program": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "path"],
+          "properties": {
+            "mode": {
+              "const": "g++"
+            },
+            "path": {
+              "type": "string"
+            },
+            "compilerArgs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "path"],
+          "properties": {
+            "mode": {
+              "const": "python"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "command", "args"],
+          "properties": {
+            "mode": {
+              "const": "command"
+            },
+            "command": {
+              "type": "string"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "filesInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "path"],
+      "properties": {
+        "type": {
+          "const": "files"
+        },
+        "path": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\..+$"
+          }
+        }
+      }
+    },
+    "generatorInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "program"],
+      "properties": {
+        "type": {
+          "const": "generator"
+        },
+        "program": { "$ref": "#/$defs/program" }
+      }
+    },
+    "filesOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "path"],
+      "properties": {
+        "type": {
+          "const": "files"
+        },
+        "path": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\..+$"
+          }
+        }
+      }
+    },
+    "modelProgramOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "program"],
+      "properties": {
+        "type": {
+          "const": "model-program"
+        },
+        "program": { "$ref": "#/$defs/program" }
+      }
+    }
+  },
+  "properties": {
+    "verifier": { "$ref": "#/$defs/program" }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "input": {
+          "$ref": "#/$defs/generatorInput"
+        },
+        "output": {
+          "$ref": "#/$defs/modelProgramOutput"
+        }
+      },
+      "anyOf": [
+        {
+          "required": ["output"]
+        },
+        {
+          "required": ["verifier"]
+        }
+      ]
+    },
+    {
+      "properties": {
+        "input": {
+          "$ref": "#/$defs/filesInput"
+        },
+        "output": {
+          "anyOf": [
+            { "$ref": "#/$defs/filesOutput" },
+            { "$ref": "#/$defs/modelProgramOutput" }
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": ["output"]
+        },
+        {
+          "required": ["verifier"]
+        }
+      ]
+    }
+  ]
+}
