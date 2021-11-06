@@ -1,4 +1,5 @@
 use crate::commands::get_theme;
+use clap::Parser;
 use console::style;
 use dialoguer::{Confirm, Input, Select};
 use maplit::btreemap;
@@ -16,7 +17,7 @@ enum OutputSelection {
     ModelProgram,
 }
 
-fn prompt_input() -> (InputSelection, BTreeMap<&'static str, String>) {
+fn prompt_input<'a>() -> (InputSelection, BTreeMap<&'a str, String>) {
     let theme = get_theme();
 
     let selection = Select::with_theme(&theme)
@@ -85,6 +86,9 @@ fn prompt_output_files<'a>() -> BTreeMap<&'a str, String> {
     }
 }
 
+#[derive(Parser)]
+pub struct Params;
+
 pub fn run() {
     let theme = get_theme();
 
@@ -117,7 +121,7 @@ pub fn run() {
                 };
                 match output_selection {
                     Some(OutputSelection::Files) => {
-                        result.insert("outputFiles", to_value(&prompt_output_files()).unwrap());
+                        result.insert("output_files", to_value(&prompt_output_files()).unwrap());
                     }
                     Some(OutputSelection::ModelProgram) => {
                         result.insert("modelProgram", to_value(&prompt_model_program()).unwrap());
@@ -151,7 +155,7 @@ pub fn run() {
                 };
                 match output_selection {
                     OutputSelection::Files => {
-                        result.insert("outputFiles", to_value(&prompt_output_files()).unwrap())
+                        result.insert("output_files", to_value(&prompt_output_files()).unwrap())
                     }
                     OutputSelection::ModelProgram => {
                         result.insert("modelProgram", to_value(&prompt_model_program()).unwrap())

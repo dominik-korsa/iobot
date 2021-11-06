@@ -15,15 +15,15 @@ struct Opts {
 #[derive(Parser)]
 enum SubCommand {
     #[clap()]
-    Init(Init),
+    Init(commands::init::Params),
+    #[clap()]
+    Generate(commands::generate::Params),
 }
-
-#[derive(Parser)]
-struct Init;
 
 fn main() {
     let opts: Opts = Opts::parse();
     match opts.subcommand {
         SubCommand::Init(_) => commands::init::run(),
+        SubCommand::Generate(params) => commands::generate::run(params),
     }
 }

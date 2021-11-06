@@ -1,6 +1,5 @@
 {
   "type": "object",
-  "additionalProperties": false,
   "required": ["input"],
   "$defs": {
     "program": {
@@ -113,7 +112,7 @@
   "properties": {
     "verifier": { "$ref": "#/$defs/program" }
   },
-  "anyOf": [
+  "oneOf": [
     {
       "properties": {
         "input": {
@@ -130,6 +129,7 @@
           "$ref": "#/$defs/program"
         }
       },
+      "additionalProperties": false,
       "anyOf": [
         {
           "required": ["modelProgram"]
@@ -148,14 +148,8 @@
           "$ref": "#/$defs/outputFiles"
         }
       },
-      "anyOf": [
-        {
-          "required": ["outputFiles"]
-        },
-        {
-          "required": ["verifier"]
-        }
-      ]
+      "additionalProperties": false,
+      "required": ["outputFiles"]
     }
   ]
 }
