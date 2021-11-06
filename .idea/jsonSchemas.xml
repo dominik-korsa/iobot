@@ -7,7 +7,35 @@
           <value>
             <SchemaInfo>
               <option name="name" value="IObot config" />
-              <option name="relativePathToSchema" value="config.schema.json" />
+              <option name="relativePathToSchema" value="schemas/config.schema.json" />
+              <option name="schemaVersion" value="JSON Schema version 6" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="pattern" value="true" />
+                    <option name="path" value="iobot.yaml" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+        <entry key="IObot config prototype">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="IObot config prototype" />
+              <option name="relativePathToSchema" value="schemas/config-prototype.schema.json" />
+              <option name="schemaVersion" value="JSON Schema version 6" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="pattern" value="true" />
+                    <option name="path" value="iobot-prototype.yaml" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
+                </list>
+              </option>
             </SchemaInfo>
           </value>
         </entry>
@@ -20,6 +48,9 @@
               <option name="applicationDefined" value="true" />
               <option name="patterns">
                 <list>
+                  <Item>
+                    <option name="path" value="schemas/config-prototype.schema.json" />
+                  </Item>
                   <Item>
                     <option name="path" value="witaj/config.schema.json" />
                   </Item>

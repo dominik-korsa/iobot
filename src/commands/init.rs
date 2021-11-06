@@ -1,15 +1,11 @@
+use crate::commands::get_theme;
+use crate::init_common::{prompt_input, prompt_model_program, prompt_verifier, InputSelection};
 use console::style;
-use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input, Select};
 use maplit::btreemap;
 use serde_yaml::to_value;
 use std::collections::BTreeMap;
 use std::fs;
-
-enum InputSelection {
-    Files,
-    Generator,
-}
 
 enum OutputSelection {
     Files,
@@ -17,19 +13,14 @@ enum OutputSelection {
 }
 
 fn get_model_program_output<'a>() -> BTreeMap<&'a str, String> {
-    let model_program_path = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt("Enter model program path")
-        .with_initial_text("./")
-        .interact_text()
-        .unwrap();
     btreemap! {
         "type" => "model-program".to_string(),
-        "path" => model_program_path,
+        "program" => prompt_model_program(),
     }
 }
 
 fn get_files_output<'a>() -> BTreeMap<&'a str, String> {
-    let path = Input::with_theme(&ColorfulTheme::default())
+    let path = Input::with_theme(&get_theme())
         .with_prompt("Enter output files path")
         .with_initial_text("./out/")
         .interact_text()
@@ -40,45 +31,10 @@ fn get_files_output<'a>() -> BTreeMap<&'a str, String> {
     }
 }
 
-pub fn init() {
-    let theme = ColorfulTheme::default();
+pub fn run() {
+    let theme = get_theme();
 
-    let input_selection = Select::with_theme(&theme)
-        .with_prompt("Pick input type")
-        .default(0)
-        .items(&["Input files", "Generator script"])
-        .interact()
-        .unwrap();
-    let input_selection = match input_selection {
-        0 => InputSelection::Files,
-        1 => InputSelection::Generator,
-        _ => panic!(),
-    };
-
-    let input_value = match input_selection {
-        InputSelection::Files => {
-            let path = Input::with_theme(&ColorfulTheme::default())
-                .with_prompt("Enter input files path")
-                .with_initial_text("./in/")
-                .interact_text()
-                .unwrap();
-            btreemap! {
-                "type" => "files".to_string(),
-                "path" => path,
-            }
-        }
-        InputSelection::Generator => {
-            let program_path = Input::with_theme(&ColorfulTheme::default())
-                .with_prompt("Enter generator program path")
-                .with_initial_text("./")
-                .interact_text()
-                .unwrap();
-            btreemap! {
-                "type" => "generator".to_string(),
-                "program" => program_path,
-            }
-        }
-    };
+    let (input_selection, input_value) = prompt_input();
 
     let use_verifier_script = Confirm::with_theme(&theme)
         .with_prompt("Use a verifier script?")
@@ -86,11 +42,7 @@ pub fn init() {
         .unwrap();
 
     let (output_value, verifier_value) = if use_verifier_script {
-        let verifier_program_path: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter verifier program path")
-            .with_initial_text("./")
-            .interact_text()
-            .unwrap();
+        let verifier_program_path = prompt_verifier();
         let output_value = match input_selection {
             InputSelection::Files => {
                 let output_selection = Select::with_theme(&theme)
