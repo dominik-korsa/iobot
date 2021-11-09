@@ -10,8 +10,39 @@ pub struct Files {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ProgramOrShorthand {
-    Shorthand(String),
+    Shorthand(PathBuf),
     Value(Program),
+}
+
+impl ProgramOrShorthand {
+    pub fn to_program(self) -> Result<Program, UnknownExtensionError> {
+        match self {
+            ProgramOrShorthand::Value(program) => Ok(program),
+            ProgramOrShorthand::Shorthand(shorthand) => {
+                let ext = shorthand.extension().and_then(|x| x.to_str());
+                match ext {
+                    None => Err(UnknownExtensionError),
+                    Some(ext) => match ext {
+                        "cpp" => Ok(Program::GPP {
+                            path: shorthand,
+                            compiler_args: None,
+                        }),
+                        "py" => Ok(Program::Python { path: shorthand }),
+                        _ => Err(UnknownExtensionError),
+                    },
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnknownExtensionError;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Command {
+    pub command: String,
+    pub args: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -27,8 +58,12 @@ pub enum Program {
         path: PathBuf,
     },
     Command {
-        command: String,
-        args: Option<Vec<String>>,
+        run: Command,
+    },
+    Compiled {
+        compile: Command,
+        extension: String,
+        run: Command,
     },
 }
 
@@ -36,30 +71,30 @@ pub enum Program {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum Input {
     Files(Files),
-    Generator(ProgramOrShorthand),
+    Generator { program: ProgramOrShorthand },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelProgram {
-    input: Files,
-    model_program: ProgramOrShorthand,
-    verifier: Option<ProgramOrShorthand>,
+    pub input: Input,
+    pub model_program: ProgramOrShorthand,
+    pub verifier: Option<ProgramOrShorthand>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct OutputFiles {
-    input: Input,
-    output_files: Files,
-    verifier: Option<ProgramOrShorthand>,
+    pub input: Files,
+    pub output_files: Files,
+    pub verifier: Option<ProgramOrShorthand>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct JustVerifier {
-    input: Input,
-    verifier: ProgramOrShorthand,
+    pub input: Input,
+    pub verifier: ProgramOrShorthand,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

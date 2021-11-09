@@ -2,6 +2,22 @@
   "type": "object",
   "required": ["input"],
   "$defs": {
+    "command": {
+      "type": "object",
+      "required": ["command", "args"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "program": {
       "anyOf": [
         {
@@ -42,19 +58,36 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["mode", "command", "args"],
+          "required": [
+            "mode",
+            "run"
+          ],
           "properties": {
             "mode": {
               "const": "command"
             },
-            "command": {
-              "type": "string"
+            "run": {
+              "$ref": "#/$defs/command"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "compile", "run"],
+          "properties": {
+            "mode": {
+              "const": "compiled"
             },
-            "args": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+            "compile": {
+              "$ref": "#/$defs/command"
+            },
+            "extension": {
+              "type": "string",
+              "pattern": "^(\\..+)?$"
+            },
+            "run": {
+              "$ref": "#/$defs/command"
             }
           }
         }
@@ -112,7 +145,7 @@
   "properties": {
     "verifier": { "$ref": "#/$defs/program" }
   },
-  "oneOf": [
+  "anyOf": [
     {
       "properties": {
         "input": {

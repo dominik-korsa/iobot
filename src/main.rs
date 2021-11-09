@@ -1,5 +1,6 @@
 mod commands;
 mod config;
+mod generator;
 mod runner;
 mod utils;
 
@@ -18,6 +19,8 @@ enum SubCommand {
     Init(commands::init::Params),
     #[clap()]
     Generate(commands::generate::Params),
+    // #[clap()]
+    // Test(commands::test::Params),
 }
 
 fn main() {
@@ -25,5 +28,6 @@ fn main() {
     match opts.subcommand {
         SubCommand::Init(_) => commands::init::run(),
         SubCommand::Generate(params) => commands::generate::run(params),
+        // SubCommand::Test(params) => commands::test::run(params),
     }
 }
