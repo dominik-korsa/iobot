@@ -1,6 +1,6 @@
 use crate::config::Program;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use std::{env, fs, io};
 use uuid::Uuid;
@@ -10,9 +10,9 @@ struct Compiled {
 }
 
 impl Compiled {
-    fn delete_file(&self) -> Result<(), trash::Error> {
+    fn delete_file(&self) -> io::Result<()> {
         if self.target.exists() {
-            fs::remove_file(&self.target);
+            fs::remove_file(&self.target)?;
         }
         Ok(())
     }
@@ -31,14 +31,14 @@ impl From<io::Error> for CompileError {
     }
 }
 
-fn replace_target(template: &str, target: &PathBuf) -> String {
+fn replace_target(template: &str, target: &Path) -> String {
     template.replace("{target}", target.to_str().unwrap())
 }
 
 fn compile(
     command: &str,
     args: &[String],
-    config_dir: &PathBuf,
+    config_dir: &Path,
     ext: &str,
 ) -> Result<Compiled, CompileError> {
     if !ext.is_empty() && !ext.starts_with(".") {
@@ -71,6 +71,7 @@ impl RunResult {
     }
 }
 
+#[derive(Debug)]
 pub struct RunError(pub Option<i32>);
 
 pub struct Runner {
@@ -81,15 +82,15 @@ pub struct Runner {
 }
 
 impl Runner {
-    pub fn build(program: Program, config_dir: &PathBuf) -> Result<Runner, CompileError> {
+    pub fn build(program: &Program, config_dir: &Path) -> Result<Runner, CompileError> {
         let (command, args, compiled): (String, Vec<String>, Option<Compiled>) = match program {
             Program::GPP {
                 path,
                 compiler_args,
             } => {
-                let mut args = compiler_args.unwrap_or(vec![]);
+                let mut args = compiler_args.clone().unwrap_or(vec![]);
                 args.extend([
-                    path.into_os_string().into_string().unwrap(),
+                    path.clone().to_str().unwrap().to_string(),
                     "-o".to_string(),
                     "{target}".to_string(),
                 ]);
@@ -104,12 +105,16 @@ impl Runner {
             Program::Python { path } => {
                 // TODO: Add config for python command
                 (
-                    "python3".to_string(),
+                    "python".to_string(),
                     vec![path.to_str().unwrap().to_string()],
                     None,
                 )
             }
-            Program::Command { run } => (run.command, run.args.unwrap_or(vec![]), None),
+            Program::Command { run } => (
+                run.command.clone(),
+                run.args.clone().unwrap_or(vec![]),
+                None,
+            ),
             Program::Compiled {
                 compile: compile_config,
                 extension,
@@ -117,13 +122,14 @@ impl Runner {
             } => {
                 let compiled = compile(
                     &compile_config.command,
-                    &compile_config.args.unwrap_or(vec![]),
+                    &compile_config.args.clone().unwrap_or(vec![]),
                     config_dir,
                     &extension,
                 )?;
                 (
                     replace_target(&run.command, &compiled.target),
                     run.args
+                        .clone()
                         .unwrap_or(vec![])
                         .into_iter()
                         .map(|x| replace_target(&x, &compiled.target))
@@ -136,7 +142,7 @@ impl Runner {
             compiled,
             command,
             args,
-            config_dir: config_dir.clone(),
+            config_dir: config_dir.to_path_buf(),
         })
     }
 
@@ -154,21 +160,21 @@ impl Runner {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .map_err(|error| RunError(None))?;
+            .map_err(|_| RunError(None))?;
         child
             .stdin
             .as_ref()
             .unwrap()
             .write_all(&input)
-            .map_err(|error| RunError(None))?;
-        let output = child.wait_with_output().map_err(|error| RunError(None))?;
+            .map_err(|_| RunError(None))?;
+        let output = child.wait_with_output().map_err(|_| RunError(None))?;
         return RunResult::from_output(output);
     }
 
     pub fn run_without_input(&self, args: Vec<String>) -> Result<RunResult, RunError> {
         let mut command = self.get_command();
         command.args(args);
-        let output = command.output().map_err(|error| RunError(None))?;
+        let output = command.output().map_err(|_| RunError(None))?;
         return RunResult::from_output(output);
     }
 }

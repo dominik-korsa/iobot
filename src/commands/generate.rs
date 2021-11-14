@@ -1,7 +1,8 @@
 use crate::commands::get_theme;
-use crate::config::{parse_config, Config};
-use crate::runner::Runner;
+use crate::config::{Config, FilesInput, GenerableConfig, Input, JustVerifier, OutputFiles};
+use crate::generator::{copy_or_generate_input, generate_outputs};
 use clap::Parser;
+use console::style;
 use dialoguer::Confirm;
 use std::fs::DirEntry;
 use std::path::PathBuf;
@@ -40,15 +41,35 @@ pub fn run(params: Params) {
         .unwrap();
     }
     let source_config_path = params.source.join("iobot.yaml");
-    let config =
-        parse_config(&fs::read(source_config_path).unwrap()).expect("Failed to parse config");
-    println!("{:#?}", config);
-    match config {
-        Config::OutputFiles(_) => {}
-        Config::ModelProgram(config) => {
-            let model_runner =
-                Runner::build(config.model_program.to_program().unwrap(), &params.source).unwrap();
+    let config = Config::parse_bytes(&fs::read(source_config_path).unwrap())
+        .expect("Failed to parse config");
+    let config = config.to_generable().expect("Already generated");
+    let input_files_config =
+        copy_or_generate_input(&config.get_input(), &params.source, &params.generated).unwrap();
+    let generated_config = match config {
+        GenerableConfig::ModelProgram(config) => {
+            let output_files_config = generate_outputs(
+                &config.model_program.to_program().unwrap(),
+                &input_files_config,
+                &params.source,
+                &params.generated,
+                ".out",
+            )
+            .unwrap();
+            Config::OutputFiles(OutputFiles {
+                input: FilesInput::Files(input_files_config),
+                output_files: output_files_config,
+                verifier: config.verifier,
+            })
         }
-        Config::JustVerifier(_) => {}
-    }
+        GenerableConfig::JustVerifier(config) => Config::JustVerifier(JustVerifier {
+            input: Input::Files(input_files_config),
+            verifier: config.verifier,
+        }),
+    };
+    let generated_config_path = params.generated.join("./iobot.yaml");
+    let yaml = serde_yaml::to_string(&generated_config).unwrap();
+    fs::write(&generated_config_path, &yaml).unwrap();
+    println!("{}", style(format!("Finished generating")).green());
+    println!("{}", yaml);
 }
